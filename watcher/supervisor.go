@@ -1,18 +1,19 @@
 package watcher
 
 import (
-	"log"
-	"time"
-	"fmt"
-	"reflect"
-	"net/http"
-	"io/ioutil"
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"reflect"
+	"time"
 
-	"pigeye/db"
 	"pigeye/common"
-	"pigeye/web/repository"
+	"pigeye/db"
 	"pigeye/model"
+	"pigeye/web/repository"
 )
 
 var tickChannel = make(chan bool)
@@ -29,15 +30,15 @@ func Create(count int) {
 		}
 	}(ticker)
 
-	go func(tickChannel <- chan bool, quotaChannel chan <- model.Quota) {
+	go func(tickChannel <-chan bool, quotaChannel chan<- model.Quota) {
 		defer close(quotaChannel)
 
-		var remainRefreshSecond = common.CACHE_REFRESH_SECOND;
+		var remainRefreshSecond = common.CACHE_REFRESH_SECOND
 
 		apiCount := repository.SelectApiCount()
 
 		for range tickChannel {
-			remainRefreshSecond--;
+			remainRefreshSecond--
 			if remainRefreshSecond > 0 {
 				continue
 			}
@@ -52,11 +53,11 @@ func Create(count int) {
 			index := 0
 			for index < apiCount {
 				quotaChannel <- model.Quota{
-					Start : index,
-					Count : common.API_QUOTA_PER_WORK,
+					Start: index,
+					Count: common.API_QUOTA_PER_WORK,
 				}
 
-				index += common.API_QUOTA_PER_WORK;
+				index += common.API_QUOTA_PER_WORK
 			}
 		}
 	}(tickChannel, quotaChannel)
@@ -75,14 +76,14 @@ func worker(quotaChannel <-chan model.Quota) {
 		count := quota.Count
 
 		var (
-			apiId int64
-			serviceId int64
-			url string
-			userAgent string
-			contentType string
-			method string
-			requestBody string
-			status int
+			apiId        int64
+			serviceId    int64
+			url          string
+			userAgent    string
+			contentType  string
+			method       string
+			requestBody  string
+			status       int
 			responseBody string
 		)
 
@@ -99,7 +100,7 @@ func worker(quotaChannel <-chan model.Quota) {
 			Timeout: time.Second * 10,
 		}
 
-		request, err := http.NewRequest(method, url, nil)
+		request, err := http.NewRequest(method, url, bytes.NewBufferString(requestBody))
 		if err != nil {
 
 		}
@@ -115,19 +116,19 @@ func worker(quotaChannel <-chan model.Quota) {
 		response, err := client.Do(request)
 		log.Println(response)
 
-		if (response == nil) {
+		if response == nil {
 			log.Print("response is nil..")
 			continue
 		}
 
-		if (status != response.StatusCode) {
+		if status != response.StatusCode {
 			log.Print("Status(", status, ") !")
 			repository.UpdateApiResult(&apiId, &serviceId, false)
 
 			continue
 		}
 
-		if (len(responseBody) == 0) {
+		if len(responseBody) == 0 {
 			// success
 			// don't compare any more
 			return
