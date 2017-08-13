@@ -26,7 +26,7 @@ func main() {
 	err = yaml.Unmarshal(configFile, &config)
 	log.Print(config)
 
-	db.Create(config.DB.Id, config.DB.Password, config.DB.Name, config.DB.PoolSize)
+	db.Create(config.DB.Ip, config.DB.Port, config.DB.Id, config.DB.Password, config.DB.Name, config.DB.PoolSize)
 	watcher.Create(config.Monitor.PoolSize)
 
 	http.HandleFunc(common.INDEX_URL, handler.Index)
