@@ -1,10 +1,10 @@
 package db
 
 import (
-	"log"
-	"time"
 	"container/list"
 	"database/sql"
+	"log"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -16,13 +16,15 @@ var connectionResponseChannel = make(chan *sql.DB)
 var connectionList = list.New()
 
 type DBConfig struct {
+	Ip       string
+	Port     string
 	Id       string
 	Password string
 	Name     string
 }
 
 func (dbConfig *DBConfig) CreationConnection() *sql.DB {
-	db, err := sql.Open("mysql", dbConfig.Id + ":" + dbConfig.Password + "@/" + dbConfig.Name)
+	db, err := sql.Open("mysql", dbConfig.Id+":"+dbConfig.Password+"@tcp("+dbConfig.Ip+":"+dbConfig.Port+")/"+dbConfig.Name)
 	if err != nil {
 		log.Fatal(err)
 		return nil
@@ -33,7 +35,9 @@ func (dbConfig *DBConfig) CreationConnection() *sql.DB {
 
 var dbConfig DBConfig = DBConfig{}
 
-func Create(id string, password string, name string, count int) {
+func Create(ip string, port string, id string, password string, name string, count int) {
+	dbConfig.Ip = ip
+	dbConfig.Port = port
 	dbConfig.Id = id
 	dbConfig.Password = password
 	dbConfig.Name = name
@@ -41,7 +45,7 @@ func Create(id string, password string, name string, count int) {
 	go manageConnection(connectionManageChannel)
 
 	for i := 0; i < count; i++ {
-		db := dbConfig.CreationConnection();
+		db := dbConfig.CreationConnection()
 
 		connectionManageChannel <- db
 	}
@@ -59,7 +63,7 @@ func manageConnection(connectoinManageChannel chan *sql.DB) {
 		select {
 		case db := <-connectoinManageChannel:
 			connectionList.PushBack(db)
-			log.Println("db create");
+			log.Println("db create")
 
 		case <-connectionRequestChannel:
 			if connectionList.Len() > 0 {
@@ -69,8 +73,8 @@ func manageConnection(connectoinManageChannel chan *sql.DB) {
 			}
 
 		case <-time.After(time.Second * 2):
-			if (connectionList.Len() > 0) {
-				db := connectionList.Front().Value.(*sql.DB);
+			if connectionList.Len() > 0 {
+				db := connectionList.Front().Value.(*sql.DB)
 				err := db.Ping()
 				if err != nil {
 					log.Fatal(err)
@@ -92,4 +96,3 @@ func GetConnection() *sql.DB {
 func ReleaseConnection(db *sql.DB) {
 	connectionManageChannel <- db
 }
-
