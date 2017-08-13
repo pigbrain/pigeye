@@ -1,10 +1,10 @@
 package repository
 
 import (
+	"database/sql"
+	"log"
 	"pigeye/db"
 	"pigeye/model"
-	"log"
-	"database/sql"
 )
 
 func SelectServiceCardList() []model.ServiceCard {
@@ -18,16 +18,16 @@ func SelectServiceCardList() []model.ServiceCard {
 		panic(err.Error())
 	}
 
-	var (
-		serviceId int64
-		name string
-		description string
-	)
-
 	rows, err := stmtOut.Query()
 	if err == sql.ErrNoRows {
 		return nil
 	}
+
+	var (
+		serviceId   int64
+		name        string
+		description string
+	)
 
 	if err != nil {
 		panic(err.Error())
@@ -41,15 +41,15 @@ func SelectServiceCardList() []model.ServiceCard {
 		}
 
 		cards = append(cards, model.ServiceCard{
-			ServiceId : serviceId,
-			Name : name,
-			Description : description})
+			ServiceId:   serviceId,
+			Name:        name,
+			Description: description})
 	}
 
 	return cards
 }
 
-func InsertService(name *string, description*string) {
+func InsertService(name *string, description *string) {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
@@ -65,4 +65,3 @@ func InsertService(name *string, description*string) {
 		panic(err.Error())
 	}
 }
-

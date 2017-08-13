@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"pigeye/common"
-	"pigeye/db"
 	"pigeye/model"
 	"pigeye/web/repository"
 )
@@ -71,24 +71,23 @@ func worker(quotaChannel <-chan model.Quota) {
 		start := quota.Start
 		count := quota.Count
 
-		apiList := apiRepository.SelectApiList(apiId, ServiceId, start, count)
+		apiList := repository.SelectApiList(start, count)
 		for _, api := range apiList {
-
 			var client = &http.Client{
 				Timeout: time.Second * 10,
 			}
 
-			request, err := http.NewRequest(api.Method, api.Url, nil)
+			request, err := http.NewRequest(api.Method, api.Url, bytes.NewBufferString(api.RequestBody))
 			if err != nil {
 
 			}
 
 			if len(api.ContentType) > 0 {
-				request.Header.Set("Content-Type", contentType)
+				request.Header.Set("Content-Type", api.ContentType)
 			}
 
 			if len(api.UserAgent) > 0 {
-				request.Header.Set("User-Agent", userAgent)
+				request.Header.Set("User-Agent", api.UserAgent)
 			}
 
 			response, err := client.Do(request)
@@ -99,8 +98,8 @@ func worker(quotaChannel <-chan model.Quota) {
 				continue
 			}
 
-			if status != response.StatusCode {
-				log.Print("Status(", status, ") !")
+			if api.Status != response.StatusCode {
+				log.Print("Status(", api.Status, ") !")
 				repository.UpdateApiResult(&api.ApiId, &api.ServiceId, false)
 
 				continue
@@ -117,7 +116,7 @@ func worker(quotaChannel <-chan model.Quota) {
 
 			}
 
-			result, err := AreEqualJSON(string(body), responseBody)
+			result, err := AreEqualJSON(string(body), api.ResponseBody)
 			if err != nil {
 
 			}

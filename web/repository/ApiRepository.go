@@ -135,18 +135,18 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	}
 }
 
-func SelectApiList(apiId *int64, serviceId *int64, from int, count int) *[]model.ApiCard {
+func SelectApiList(from int, count int) []model.ApiCard {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
-	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, content_type,  method, request_body, status, response_body, notification_script FROM api WHERE api_id = ? and service_id = ? LIMIT ?, ?")
+	stmtOut, err := dbConnection.Prepare("SELECT api_id, service_id, name, description, url, content_type,  method, request_body, status, response_body, notification_script FROM api LIMIT ?, ?")
 	defer stmtOut.Close()
 
 	if err != nil {
 		panic(err.Error())
 	}
 
-	rows, err := stmtOut.Query(apiId, serviceId, from, count)
+	rows, err := stmtOut.Query(from, count)
 
 	if err == sql.ErrNoRows {
 		return nil
@@ -159,6 +159,8 @@ func SelectApiList(apiId *int64, serviceId *int64, from int, count int) *[]model
 
 	var cards []model.ApiCard
 	var (
+		serviceId          int64
+		apiId              int64
 		name               string
 		description        string
 		url                string
@@ -171,7 +173,7 @@ func SelectApiList(apiId *int64, serviceId *int64, from int, count int) *[]model
 	)
 
 	for rows.Next() {
-		err = rows.Scan(&name, &description, &url, &contentType, &method, &requestBody, &status, &responseBody, &notificationScript)
+		err = rows.Scan(&apiId, &serviceId, &name, &description, &url, &contentType, &method, &requestBody, &status, &responseBody, &notificationScript)
 		if err != nil {
 			continue
 		}
@@ -182,8 +184,8 @@ func SelectApiList(apiId *int64, serviceId *int64, from int, count int) *[]model
 		}
 
 		cards = append(cards, model.ApiCard{
-			ServiceId:          *serviceId,
-			ApiId:              *apiId,
+			ServiceId:          serviceId,
+			ApiId:              apiId,
 			Name:               name,
 			Description:        description,
 			Method:             method,
@@ -197,7 +199,7 @@ func SelectApiList(apiId *int64, serviceId *int64, from int, count int) *[]model
 
 	}
 
-	return &cards
+	return cards
 }
 
 func UpdateApi(apiCard *model.ApiCard) {
@@ -243,6 +245,7 @@ func InsertApi(apiCard *model.ApiCard) {
 	defer stmtIns.Close()
 
 	if err != nil {
+		log.Print(err.Error())
 		panic(err.Error())
 	}
 
