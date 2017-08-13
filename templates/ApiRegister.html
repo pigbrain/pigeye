@@ -55,7 +55,7 @@
             </div>
         </div>
     </div>
-    <div class="card card-inverse" style="background-color: #333; border-color: #333;">
+    <div class="card top-blank">
         <div class="card-block">
             <h4># Response</h4>
 
@@ -71,13 +71,24 @@
         </div>
     </div>
 
-    <div class="form-group text-center" style="margin-top:20px">
+	<div class="card top-blank">
+		<div class="card-block">
+			<h4># Notification on failure</h4>
+            <label>Script</label>
+            <div class="form-group">
+                <textarea class="form-control" id="notificationScript" name="notificationScript" rows="3">{{ if ne .ApiId 0 }} {{ .NotificationScript }} {{ end }}</textarea>
+            </div>
+		</div>
+	</div>
+    
+	<div class="form-group text-center" style="margin-top:20px">
         <div class="btn-group">
             {{ if ne .ApiId 0 }} <button type="submit" class="btn btn-primary">Modify</button> {{ end }}
             {{ if eq .ApiId 0 }} <button type="submit" class="btn btn-primary">Register</button> {{ end }}
             <a href="/api/list?serviceId={{ .ServiceId }}" class="btn btn-default" role="button">Cancel</a>
         </div>
     </div>
+
 </form>
 
 

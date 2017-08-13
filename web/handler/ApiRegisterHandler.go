@@ -1,14 +1,14 @@
 package handler
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"pigeye/common"
+	"pigeye/model"
 	"pigeye/web/core"
 	"pigeye/web/repository"
-	"pigeye/model"
 )
 
 func ApiRegister(writer http.ResponseWriter, request *http.Request) {
@@ -29,7 +29,7 @@ func viewApiRegister(writer http.ResponseWriter, request *http.Request) {
 		ApiId     int64
 	}{
 		ServiceId: serviceId,
-		ApiId: 0}
+		ApiId:     0}
 
 	if apiId == 0 {
 		core.Render(writer, "ApiRegister", empty)
@@ -37,7 +37,7 @@ func viewApiRegister(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	apiCard := repository.SelectApiCard(&apiId, &serviceId)
-	if (apiCard == nil) {
+	if apiCard == nil {
 		core.Render(writer, "ApiRegister", empty)
 		return
 	}
@@ -57,19 +57,21 @@ func doRegisterApi(writer http.ResponseWriter, request *http.Request) {
 	requestBody := request.FormValue("requestBody")
 	status, _ := strconv.Atoi(request.FormValue("status"))
 	responseBody := request.FormValue("responseBody")
+	notificationScript := request.FormValue("notificationScript")
 
 	apiCard := model.ApiCard{
-		ServiceId: serviceId,
-		ApiId: apiId,
-		Name: name,
-		Description: description,
-		Method: method,
-		ContentType: contentType,
-		UserAgent: userAgent,
-		Url: url,
-		RequestBody: requestBody,
-		Status: status,
-		ResponseBody: responseBody,
+		ServiceId:          serviceId,
+		ApiId:              apiId,
+		Name:               name,
+		Description:        description,
+		Method:             method,
+		ContentType:        contentType,
+		UserAgent:          userAgent,
+		Url:                url,
+		RequestBody:        requestBody,
+		Status:             status,
+		ResponseBody:       responseBody,
+		NotificationScript: notificationScript,
 	}
 
 	if apiId > 0 {

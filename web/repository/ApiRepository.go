@@ -54,12 +54,12 @@ func SelectApiCardList(serviceId *int64) []model.ApiCard {
 
 	var cards []model.ApiCard
 	var (
-		apiId int64
-		name string
+		apiId       int64
+		name        string
 		description string
-		method string
-		url string
-		success int8
+		method      string
+		url         string
+		success     int8
 	)
 
 	for rows.Next() {
@@ -70,12 +70,12 @@ func SelectApiCardList(serviceId *int64) []model.ApiCard {
 
 		cards = append(cards,
 			model.ApiCard{
-				ApiId           : apiId,
-				Name            : name,
-				Description     : description,
-				Method          : method,
-				Url             : url,
-				Success         : success})
+				ApiId:       apiId,
+				Name:        name,
+				Description: description,
+				Method:      method,
+				Url:         url,
+				Success:     success})
 	}
 
 	return cards
@@ -85,7 +85,7 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
-	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, content_type,  method, request_body, status, response_body FROM api WHERE api_id = ? and service_id = ?")
+	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, content_type,  method, request_body, status, response_body, notification_script FROM api WHERE api_id = ? and service_id = ?")
 	defer stmtOut.Close()
 
 	if err != nil {
@@ -93,45 +93,118 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	}
 
 	var (
-		name string
-		description string
-		url string
-		contentType string
-		method string
-		requestBody string
-		status int
-		responseBody string
+		name               string
+		description        string
+		url                string
+		contentType        string
+		method             string
+		requestBody        string
+		status             int
+		responseBody       string
+		notificationScript sql.NullString
 	)
 
-	err = stmtOut.QueryRow(apiId, serviceId).Scan(&name, &description, &url, &contentType, &method, &requestBody, &status, &responseBody)
+	err = stmtOut.QueryRow(apiId, serviceId).Scan(&name, &description, &url, &contentType, &method, &requestBody, &status, &responseBody, &notificationScript)
 
 	if err == sql.ErrNoRows {
 		return nil
 	}
 
 	if err != nil {
+		log.Print(err.Error())
 		panic(err.Error())
 	}
 
-	return &model.ApiCard{
-		ServiceId: *serviceId,
-		ApiId: *apiId,
-		Name: name,
-		Description: description,
-		Method : method,
-		ContentType:contentType,
-		Url: url,
-		RequestBody:requestBody,
-		Status:status,
-		ResponseBody:responseBody,
+	var script string
+	if notificationScript.Valid {
+		script = notificationScript.String
 	}
+
+	return &model.ApiCard{
+		ServiceId:          *serviceId,
+		ApiId:              *apiId,
+		Name:               name,
+		Description:        description,
+		Method:             method,
+		ContentType:        contentType,
+		Url:                url,
+		RequestBody:        requestBody,
+		Status:             status,
+		ResponseBody:       responseBody,
+		NotificationScript: script,
+	}
+}
+
+func SelectApiList(apiId *int64, serviceId *int64, from int, count int) *[]model.ApiCard {
+	dbConnection := db.GetConnection()
+	defer db.ReleaseConnection(dbConnection)
+
+	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, content_type,  method, request_body, status, response_body, notification_script FROM api WHERE api_id = ? and service_id = ? LIMIT ?, ?")
+	defer stmtOut.Close()
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	rows, err := stmtOut.Query(apiId, serviceId, from, count)
+
+	if err == sql.ErrNoRows {
+		return nil
+	}
+
+	if err != nil {
+		log.Print(err.Error())
+		panic(err.Error())
+	}
+
+	var cards []model.ApiCard
+	var (
+		name               string
+		description        string
+		url                string
+		contentType        string
+		method             string
+		requestBody        string
+		status             int
+		responseBody       string
+		notificationScript sql.NullString
+	)
+
+	for rows.Next() {
+		err = rows.Scan(&name, &description, &url, &contentType, &method, &requestBody, &status, &responseBody, &notificationScript)
+		if err != nil {
+			continue
+		}
+
+		var script string
+		if notificationScript.Valid {
+			script = notificationScript.String
+		}
+
+		cards = append(cards, model.ApiCard{
+			ServiceId:          *serviceId,
+			ApiId:              *apiId,
+			Name:               name,
+			Description:        description,
+			Method:             method,
+			ContentType:        contentType,
+			Url:                url,
+			RequestBody:        requestBody,
+			Status:             status,
+			ResponseBody:       responseBody,
+			NotificationScript: script,
+		})
+
+	}
+
+	return &cards
 }
 
 func UpdateApi(apiCard *model.ApiCard) {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
-	query := "UPDATE api SET name = ?, description = ?, url = ?, user_agent = ?, content_type = ?, method = ?, request_body = ?, status = ?, response_body = ?, creation_datetime = NOW(), updated_datetime = NOW() "
+	query := "UPDATE api SET name = ?, description = ?, url = ?, user_agent = ?, content_type = ?, method = ?, request_body = ?, status = ?, response_body = ?, notification_script = ?, creation_datetime = NOW(), updated_datetime = NOW() "
 	query += "WHERE api_id = ? AND service_id = ?"
 
 	stmtUpt, err := dbConnection.Prepare(query)
@@ -150,6 +223,7 @@ func UpdateApi(apiCard *model.ApiCard) {
 		apiCard.RequestBody,
 		apiCard.Status,
 		apiCard.ResponseBody,
+		apiCard.NotificationScript,
 		apiCard.ApiId,
 		apiCard.ServiceId)
 
@@ -162,8 +236,8 @@ func InsertApi(apiCard *model.ApiCard) {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
-	query := "INSERT INTO api(service_id, name, description, url, user_agent, content_type, method, request_body, status, response_body, creation_datetime, updated_datetime) "
-	query += "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+	query := "INSERT INTO api(service_id, name, description, url, user_agent, content_type, method, request_body, status, response_body, notification_script, creation_datetime, updated_datetime) "
+	query += "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
 
 	stmtIns, err := dbConnection.Prepare(query)
 	defer stmtIns.Close()
@@ -182,7 +256,8 @@ func InsertApi(apiCard *model.ApiCard) {
 		apiCard.Method,
 		apiCard.RequestBody,
 		apiCard.Status,
-		apiCard.ResponseBody)
+		apiCard.ResponseBody,
+		apiCard.NotificationScript)
 
 	if err != nil {
 		panic(err.Error())
