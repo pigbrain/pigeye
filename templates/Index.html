@@ -1,0 +1,34 @@
+{{ define "content" }}
+
+<nav class="navbar navbar-toggleable-md navbar-light bg-faded" role="navigation">
+    <a class="navbar-brand" href="/">Pig Eye <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span></a>
+    <div class="nav navbar-nav navbar-right">
+        <a href="/service/register" class="btn btn-default" role="button">Register Service</a>
+    </div>
+</nav>
+
+{{ if eq 0 (len .Cards) }}
+    <div>
+        <h2 class="text-center">There is no registered Service.</h2>
+    </div>
+    <div>
+        <h3 class="text-center">Click the "Register Service" button to register Service.</h3>
+    </div>
+{{ else }}
+    {{ range $index, $card := .Cards }}
+    <div class="card-deck mt-3">
+        <div class="card">
+            <div class="card-block">
+                <a href="/api/list?serviceId={{ $card.ServiceId }}">
+                    <h4 class="card-title">{{ $card.Name }}</h4>
+                    <p class="card-text">{{ $card.Description }}</p>
+                    <p class="card-text"><small class="text-muted">Last updated 3 mins ago</small></p>
+                </a>
+            </div>
+        </div>
+
+    </div>
+    {{ end }}
+{{ end }}
+
+{{ end }}

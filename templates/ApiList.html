@@ -1,0 +1,57 @@
+{{ define "content" }}
+
+<nav class="navbar navbar-toggleable-md navbar-light bg-faded" role="navigation">
+    <a class="navbar-brand" href="/">Pig Eye <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span></a>
+    <div class="nav navbar-nav navbar-right">
+        <a href="/api/register?serviceId={{.ServiceId}}" class="btn btn-default" >Register API</a>
+    </div>
+    <div class="collapse navbar-collapse navbar-ex1-collapse">
+        <div class="nav navbar-nav navbar-right">
+            <a href="/api/list?serviceId={{.ServiceId}}" class="btn btn-default" >Refresh</a>
+        </div>
+    </div>
+</nav>
+
+{{ if eq 0 (len .Cards) }}
+    <div>
+        <h2 class="text-center">There is no registered API.</h2>
+    </div>
+    <div>
+        <h3 class="text-center">Click the "Register API" button to register API.</h3>
+    </div>
+{{ else }}
+    <div class="card-deck mt-3">
+        {{ range $index, $card := .Cards }}
+        <div class="card">
+            <a href="/api/register?serviceId={{$.ServiceId}}&apiId={{$card.ApiId}}">
+                <div class="card-header">
+                    {{ $card.Name }}
+                </div>
+            </a>
+            <div class="card-block">
+                <div>
+                    <span class="card-text">{{ $card.Description }}</span>
+                </div>
+                <div class="top-blank">
+                    {{ if eq $card.Method "GET" }}
+                    <span class="label label-primary">{{ $card.Method }}</span> {{ $card.Url }}
+                    {{ else }}
+                    <span class="label label-success">{{ $card.Method }}</span> {{ $card.Url }}
+                    {{ end }}
+                    <span class="label label-success" >Success</span>
+                </div>
+                <div class="top-blank">
+                    <span class="card-text"><small class="text-muted">Last updated 3 mins ago</small></span>
+                </div>
+            </div>
+        </div>
+
+        {{ if and (gt $index 0) (mod (inc $index) 3) }}
+    </div>
+    <div class="card-deck mt-3">
+        {{ end }}
+        {{ end }}
+    </div>
+{{ end }}
+
+{{ end }}

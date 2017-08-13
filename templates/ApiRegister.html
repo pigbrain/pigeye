@@ -1,0 +1,84 @@
+{{ define "content" }}
+
+<nav class="navbar navbar-toggleable-md navbar-light bg-faded" role="navigation">
+    <a class="navbar-brand" href="/">Pig Eye <span class="glyphicon glyphicon-eye-close" aria-hidden="true"></span></a>
+</nav>
+
+<form method="post" action="/api/register">
+    <input type="hidden" class="form-control" id="apiId" name="apiId" value="{{ .ApiId }}">
+    <input type="hidden" class="form-control" id="serviceId" name="serviceId" value="{{.ServiceId}}">
+    <div class="card">
+        <div class="card-block">
+            <h4># Request</h4>
+
+            <label>Name</label>
+            <div class="form-group">
+                <input type="text" class="form-control" id="name" name="name" placeholder="Name" {{ if ne .ApiId 0 }} value="{{ .Name }}" {{ end }} required>
+            </div>
+
+            <label>Description</label>
+            <div class="form-group">
+                <input type="text" class="form-control" id="description" name="description" placeholder="Description" {{ if ne .ApiId 0 }} value="{{ .Description }}" {{ end }} required>
+            </div>
+
+            <label>URL</label>
+            <div class="form-group">
+                <input type="text" class="form-control" id="url" name="url" placeholder="http://api.host.com:10800/test" {{ if ne .ApiId 0 }} value="{{ .Url }}" {{ end }} required>
+            </div>
+
+            <label>Header</label>
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon" style="width:150px">User-Agent</span>
+                    <input type="text" class="form-control" id="userAgent" name="userAgent" aria-describedby="basic-addon4" {{ if ne .ApiId 0 }} value="{{ .ContentType }}" {{ end }} required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon" style="width:150px">Content-Type</span>
+                    <input type="text" class="form-control" id="contentType" name="contentType" aria-describedby="basic-addon4" {{ if ne .ApiId 0 }} value="{{ .ContentType }}" {{ end }} required>
+                </div>
+            </div>
+
+            <label>Method</label>
+            <div class="form-group">
+                <select class="form-control" id="method" name="method">
+                    <option value="GET" {{ if ne .ApiId 0 }} {{ if eq .Method "GET" }} selected {{ end }} {{ end }}> GET</option>
+                    <option value="POST" {{ if ne .ApiId 0 }} {{ if eq .Method "POST" }} selected {{ end }} {{ end }} >POST</option>
+                </select>
+            </div>
+
+            <label>Request Body</label>
+            <div class="form-group">
+                <textarea class="form-control" id="requestBody" name="requestBody" rows="3">{{ if ne .ApiId 0 }} {{ .RequestBody }} {{ end }}</textarea>
+            </div>
+        </div>
+    </div>
+    <div class="card card-inverse" style="background-color: #333; border-color: #333;">
+        <div class="card-block">
+            <h4># Response</h4>
+
+            <label>Status Code</label>
+            <div class="form-group">
+                <input type="text" class="form-control" id="status" name="status" placeholder="200" aria-describedby="basic-addon4" {{ if ne .ApiId 0 }} value="{{ .Status }}" {{ end }}  required>
+            </div>
+
+            <label>Response Body</label>
+            <div class="form-group">
+                <textarea class="form-control" id="responseBody" name="responseBody" rows="3">{{ if ne .ApiId 0 }} {{ .ResponseBody }} {{ end }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group text-center" style="margin-top:20px">
+        <div class="btn-group">
+            {{ if ne .ApiId 0 }} <button type="submit" class="btn btn-primary">Modify</button> {{ end }}
+            {{ if eq .ApiId 0 }} <button type="submit" class="btn btn-primary">Register</button> {{ end }}
+            <a href="/api/list?serviceId={{ .ServiceId }}" class="btn btn-default" role="button">Cancel</a>
+        </div>
+    </div>
+</form>
+
+
+{{ end }}
