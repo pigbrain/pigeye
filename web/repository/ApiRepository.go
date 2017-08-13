@@ -54,12 +54,12 @@ func SelectApiCardList(serviceId *int64) []model.ApiCard {
 
 	var cards []model.ApiCard
 	var (
-		apiId int64
-		name string
+		apiId       int64
+		name        string
 		description string
-		method string
-		url string
-		success int8
+		method      string
+		url         string
+		success     int8
 	)
 
 	for rows.Next() {
@@ -70,12 +70,12 @@ func SelectApiCardList(serviceId *int64) []model.ApiCard {
 
 		cards = append(cards,
 			model.ApiCard{
-				ApiId           : apiId,
-				Name            : name,
-				Description     : description,
-				Method          : method,
-				Url             : url,
-				Success         : success})
+				ApiId:       apiId,
+				Name:        name,
+				Description: description,
+				Method:      method,
+				Url:         url,
+				Success:     success})
 	}
 
 	return cards
@@ -93,13 +93,13 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	}
 
 	var (
-		name string
-		description string
-		url string
-		contentType string
-		method string
-		requestBody string
-		status int
+		name         string
+		description  string
+		url          string
+		contentType  string
+		method       string
+		requestBody  string
+		status       int
 		responseBody string
 	)
 
@@ -114,16 +114,16 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	}
 
 	return &model.ApiCard{
-		ServiceId: *serviceId,
-		ApiId: *apiId,
-		Name: name,
-		Description: description,
-		Method : method,
-		ContentType:contentType,
-		Url: url,
-		RequestBody:requestBody,
-		Status:status,
-		ResponseBody:responseBody,
+		ServiceId:    *serviceId,
+		ApiId:        *apiId,
+		Name:         name,
+		Description:  description,
+		Method:       method,
+		ContentType:  contentType,
+		Url:          url,
+		RequestBody:  requestBody,
+		Status:       status,
+		ResponseBody: responseBody,
 	}
 }
 
@@ -169,6 +169,7 @@ func InsertApi(apiCard *model.ApiCard) {
 	defer stmtIns.Close()
 
 	if err != nil {
+		log.Print(err.Error())
 		panic(err.Error())
 	}
 
