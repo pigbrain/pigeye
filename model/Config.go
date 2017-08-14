@@ -1,6 +1,9 @@
 package model
 
 type Config struct {
+	Http struct {
+		Port string `yaml:"port"`
+	}
 	Monitor struct {
 		PoolSize int `yaml:"pool-size"`
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,7 +21,12 @@ var (
 )
 
 func main() {
-	configFile, err := ioutil.ReadFile("config.yml")
+	configFlag := flag.String("config", "config.yml", "Please specify a config file (-config or --config)")
+	flag.Parse()
+
+	log.Print(*configFlag)
+
+	configFile, err := ioutil.ReadFile(*configFlag)
 	config := model.Config{}
 
 	err = yaml.Unmarshal(configFile, &config)
@@ -35,7 +41,8 @@ func main() {
 	http.HandleFunc(common.API_LIST_URL, handler.ApiList)
 	http.HandleFunc(common.STATIC_URL, handler.Static)
 
-	err = http.ListenAndServe(common.HTTP_PORT, nil)
+	port := ":" + config.Http.Port
+	err = http.ListenAndServe(port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

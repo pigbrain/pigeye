@@ -63,7 +63,6 @@ func manageConnection(connectoinManageChannel chan *sql.DB) {
 		select {
 		case db := <-connectoinManageChannel:
 			connectionList.PushBack(db)
-			log.Println("db create")
 
 		case <-connectionRequestChannel:
 			if connectionList.Len() > 0 {

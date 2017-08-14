@@ -1,3 +1,5 @@
+http:
+  port: 8080        
 monitor:
   pool-size: 1
 db:

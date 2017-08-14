@@ -22,11 +22,15 @@
 {{ else }}
     <div class="card-deck mt-3">
         {{ range $index, $card := .Cards }}
-        <div class="card">
+		{{ if eq $card.Success 1 }}
+        <div class="card" style="border-color:green; border-width:2px">
+		{{ else }}
+        <div class="card" style="border-color:red; border-width:2px">
+		{{ end }}
             <a href="/api/register?serviceId={{$.ServiceId}}&apiId={{$card.ApiId}}">
                 <div class="card-header">
                     {{ $card.Name }}
-                </div>
+				</div>
             </a>
             <div class="card-block">
                 <div>
@@ -38,7 +42,6 @@
                     {{ else }}
                     <span class="label label-success">{{ $card.Method }}</span> {{ $card.Url }}
                     {{ end }}
-                    <span class="label label-success" >Success</span>
                 </div>
                 <div class="top-blank">
                     <span class="card-text"><small class="text-muted">Last updated 3 mins ago</small></span>

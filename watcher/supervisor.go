@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/exec"
 	"reflect"
 	"time"
 
@@ -77,7 +79,13 @@ func worker(quotaChannel <-chan model.Quota) {
 				Timeout: time.Second * 10,
 			}
 
-			request, err := http.NewRequest(api.Method, api.Url, bytes.NewBufferString(api.RequestBody))
+			var requestBody io.Reader = nil
+			if len(api.RequestBody) > 0 {
+				requestBody = bytes.NewBufferString(api.RequestBody)
+			} else {
+				requestBody = nil
+			}
+			request, err := http.NewRequest(api.Method, api.Url, requestBody)
 			if err != nil {
 
 			}
@@ -91,16 +99,17 @@ func worker(quotaChannel <-chan model.Quota) {
 			}
 
 			response, err := client.Do(request)
-			log.Println(response)
 
 			if response == nil {
 				log.Print("response is nil..")
+
 				continue
 			}
 
 			if api.Status != response.StatusCode {
 				log.Print("Status(", api.Status, ") !")
 				repository.UpdateApiResult(&api.ApiId, &api.ServiceId, false)
+				executeNotificationScript(api.NotificationScript)
 
 				continue
 			}
@@ -108,21 +117,26 @@ func worker(quotaChannel <-chan model.Quota) {
 			if len(api.ResponseBody) == 0 {
 				// success
 				// don't compare any more
-				return
+				repository.UpdateApiResult(&api.ApiId, &api.ServiceId, true)
+
+				continue
 			}
 
 			body, err := ioutil.ReadAll(response.Body)
 			if err != nil {
-
+				executeNotificationScript(api.NotificationScript)
 			}
 
-			result, err := AreEqualJSON(string(body), api.ResponseBody)
+			result, err := areEqualJSON(string(body), api.ResponseBody)
 			if err != nil {
-
+				executeNotificationScript(api.NotificationScript)
 			}
 
 			if !result {
-
+				log.Print("response body is not match. (", api.ResponseBody, "), (", body, ")")
+				repository.UpdateApiResult(&api.ApiId, &api.ServiceId, false)
+				executeNotificationScript(api.NotificationScript)
+				continue
 			}
 
 			repository.UpdateApiResult(&api.ApiId, &api.ServiceId, true)
@@ -130,7 +144,7 @@ func worker(quotaChannel <-chan model.Quota) {
 	}
 }
 
-func AreEqualJSON(s1, s2 string) (bool, error) {
+func areEqualJSON(s1, s2 string) (bool, error) {
 	var o1 interface{}
 	var o2 interface{}
 
@@ -145,4 +159,18 @@ func AreEqualJSON(s1, s2 string) (bool, error) {
 	}
 
 	return reflect.DeepEqual(o1, o2), nil
+}
+
+func executeNotificationScript(script string) {
+	if len(script) <= 0 {
+		return
+	}
+
+	scriptResult, err := exec.Command("bash", "-c", script).Output()
+	if err != nil {
+		log.Print("script error, %s", err)
+	} else {
+		log.Print(scriptResult)
+	}
+
 }
