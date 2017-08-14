@@ -1,6 +1,8 @@
 monitor:
   pool-size: 1
 db:
+  ip: 127.0.0.1
+  port: 3306 
   id: root
   password: 0000
   name: pigeye

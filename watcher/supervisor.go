@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"pigeye/common"
-	"pigeye/db"
 	"pigeye/model"
 	"pigeye/web/repository"
 )
@@ -69,86 +68,65 @@ func Create(count int) {
 
 func worker(quotaChannel <-chan model.Quota) {
 	for quota := range quotaChannel {
-		dbConnection := db.GetConnection()
-		stmtOut, err := dbConnection.Prepare("SELECT api_id, service_id, url, user_agent, content_type,  method, request_body, status, response_body FROM api LIMIT ?, ?")
-
 		start := quota.Start
 		count := quota.Count
 
-		var (
-			apiId        int64
-			serviceId    int64
-			url          string
-			userAgent    string
-			contentType  string
-			method       string
-			requestBody  string
-			status       int
-			responseBody string
-		)
+		apiList := repository.SelectApiList(start, count)
+		for _, api := range apiList {
+			var client = &http.Client{
+				Timeout: time.Second * 10,
+			}
 
-		err = stmtOut.QueryRow(start, count).Scan(&apiId, &serviceId, &url, &userAgent, &contentType, &method, &requestBody, &status, &responseBody)
+			request, err := http.NewRequest(api.Method, api.Url, bytes.NewBufferString(api.RequestBody))
+			if err != nil {
 
-		db.ReleaseConnection(dbConnection)
-		stmtOut.Close()
+			}
 
-		if err != nil {
-			panic(err.Error())
+			if len(api.ContentType) > 0 {
+				request.Header.Set("Content-Type", api.ContentType)
+			}
+
+			if len(api.UserAgent) > 0 {
+				request.Header.Set("User-Agent", api.UserAgent)
+			}
+
+			response, err := client.Do(request)
+			log.Println(response)
+
+			if response == nil {
+				log.Print("response is nil..")
+				continue
+			}
+
+			if api.Status != response.StatusCode {
+				log.Print("Status(", api.Status, ") !")
+				repository.UpdateApiResult(&api.ApiId, &api.ServiceId, false)
+
+				continue
+			}
+
+			if len(api.ResponseBody) == 0 {
+				// success
+				// don't compare any more
+				return
+			}
+
+			body, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+
+			}
+
+			result, err := AreEqualJSON(string(body), api.ResponseBody)
+			if err != nil {
+
+			}
+
+			if !result {
+
+			}
+
+			repository.UpdateApiResult(&api.ApiId, &api.ServiceId, true)
 		}
-
-		var client = &http.Client{
-			Timeout: time.Second * 10,
-		}
-
-		request, err := http.NewRequest(method, url, bytes.NewBufferString(requestBody))
-		if err != nil {
-
-		}
-
-		if len(contentType) > 0 {
-			request.Header.Set("Content-Type", contentType)
-		}
-
-		if len(userAgent) > 0 {
-			request.Header.Set("User-Agent", userAgent)
-		}
-
-		response, err := client.Do(request)
-		log.Println(response)
-
-		if response == nil {
-			log.Print("response is nil..")
-			continue
-		}
-
-		if status != response.StatusCode {
-			log.Print("Status(", status, ") !")
-			repository.UpdateApiResult(&apiId, &serviceId, false)
-
-			continue
-		}
-
-		if len(responseBody) == 0 {
-			// success
-			// don't compare any more
-			return
-		}
-
-		body, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-
-		}
-
-		result, err := AreEqualJSON(string(body), responseBody)
-		if err != nil {
-
-		}
-
-		if !result {
-
-		}
-
-		repository.UpdateApiResult(&apiId, &serviceId, true)
 	}
 }
 
