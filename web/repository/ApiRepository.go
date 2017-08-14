@@ -85,7 +85,7 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
-	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, content_type,  method, request_body, status, response_body, notification_script FROM api WHERE api_id = ? and service_id = ?")
+	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, user_agent, content_type,  method, request_body, status, response_body, notification_script FROM api WHERE api_id = ? and service_id = ?")
 	defer stmtOut.Close()
 
 	if err != nil {
@@ -96,6 +96,7 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 		name               string
 		description        string
 		url                string
+		userAgent          string
 		contentType        string
 		method             string
 		requestBody        string
@@ -104,7 +105,7 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 		notificationScript sql.NullString
 	)
 
-	err = stmtOut.QueryRow(apiId, serviceId).Scan(&name, &description, &url, &contentType, &method, &requestBody, &status, &responseBody, &notificationScript)
+	err = stmtOut.QueryRow(apiId, serviceId).Scan(&name, &description, &url, &userAgent, &contentType, &method, &requestBody, &status, &responseBody, &notificationScript)
 
 	if err == sql.ErrNoRows {
 		return nil
@@ -126,6 +127,7 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 		Name:               name,
 		Description:        description,
 		Method:             method,
+		UserAgent:          userAgent,
 		ContentType:        contentType,
 		Url:                url,
 		RequestBody:        requestBody,
