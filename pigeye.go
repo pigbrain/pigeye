@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"gopkg.in/yaml.v2"
 
@@ -12,6 +13,7 @@ import (
 	"pigeye/db"
 	"pigeye/model"
 	"pigeye/watcher"
+	"pigeye/web/core"
 	"pigeye/web/handler"
 )
 
@@ -21,6 +23,11 @@ var (
 )
 
 func main() {
+	fpLog, err := os.OpenFile("logfile.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	defer fpLog.Close()
+	core.Create(fpLog)
+	core.GetLogger().Print("Adsfasdfasfas")
+
 	configFlag := flag.String("config", "config.yml", "Please specify a config file (-config or --config)")
 	flag.Parse()
 
