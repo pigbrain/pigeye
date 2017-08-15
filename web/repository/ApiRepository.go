@@ -88,6 +88,7 @@ func SelectApiCard(apiId *int64, serviceId *int64) *model.ApiCard {
 	stmtOut, err := dbConnection.Prepare("SELECT name, description, url, user_agent, content_type,  method, request_body, status, response_body, notification_script FROM api WHERE api_id = ? and service_id = ?")
 	defer stmtOut.Close()
 
+	log.Print("##################################")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -240,8 +241,8 @@ func InsertApi(apiCard *model.ApiCard) {
 	dbConnection := db.GetConnection()
 	defer db.ReleaseConnection(dbConnection)
 
-	query := "INSERT INTO api(service_id, name, description, url, user_agent, content_type, method, request_body, status, response_body, notification_script, creation_datetime, updated_datetime) "
-	query += "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+	query := "INSERT INTO api(service_id, name, description, url, user_agent, content_type, method, request_body, status, response_body, success, notification_script, creation_datetime, updated_datetime) "
+	query += "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())"
 
 	stmtIns, err := dbConnection.Prepare(query)
 	defer stmtIns.Close()
@@ -250,7 +251,7 @@ func InsertApi(apiCard *model.ApiCard) {
 		log.Print(err.Error())
 		panic(err.Error())
 	}
-
+	log.Print(apiCard)
 	_, err = stmtIns.Exec(
 		apiCard.ServiceId,
 		apiCard.Name,

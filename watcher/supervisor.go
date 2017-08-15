@@ -102,6 +102,9 @@ func worker(quotaChannel <-chan model.Quota) {
 
 			if response == nil {
 				log.Print("response is nil..")
+				repository.UpdateApiResult(&api.ApiId, &api.ServiceId, false)
+
+				executeNotificationScript(api.NotificationScript)
 
 				continue
 			}
